@@ -101,7 +101,7 @@ const $Banner = () => {
   <div class="overlay" aria-hidden="true"></div>
   <div class="top-rated-container">
     <div class="rate">
-      <img src="./star_empty.png" class="star" />
+      <img src="./../../public/assets/star_empty.png" class="star" />
       <span class="rate-value">9.5</span>
     </div>
     <div class="title">인사이드 아웃2</div>
@@ -120,6 +120,17 @@ const asyncErrorBoundary = async ({
     }
   }
 };
+const imagePathPreFix$1 = "./../../public/assets/";
+const IMAGE_SRC = Object.freeze({
+  DEFAULT_POSTER_IMAGE: imagePathPreFix$1 + "default-poster.svg",
+  DEFAULT_PLANET: imagePathPreFix$1 + "empty-planet.svg",
+  LOGO: imagePathPreFix$1 + "logo.png",
+  MODAL_CLOSE: imagePathPreFix$1 + "modal_button_close.png",
+  SEARCH: imagePathPreFix$1 + "search.svg",
+  STAR_EMPTY: imagePathPreFix$1 + "star_empty.png",
+  STAR_FILLED: imagePathPreFix$1 + "star_filled.png",
+  WOOWA_LOGO: imagePathPreFix$1 + "woowacourse_logo.png"
+});
 const addErrorBox = (text) => {
   const $movieListSection = document.querySelector(
     ".movie-list-section"
@@ -128,7 +139,7 @@ const addErrorBox = (text) => {
 };
 const $ErrorBox = ({ text }) => {
   const $errorPlanet = createElement("img", {
-    src: "./empty-planet.svg",
+    src: IMAGE_SRC.DEFAULT_PLANET,
     className: "empty-planet",
     alt: text
   });
@@ -152,7 +163,7 @@ const getSearchedMovieList = async (query, page) => {
 };
 const $EmptyList = () => {
   const $emptyPlanet = createElement("img", {
-    src: "./empty-planet.svg",
+    src: IMAGE_SRC.DEFAULT_PLANET,
     className: "empty-planet",
     alt: "검색 결과가 없습니다."
   });
@@ -165,14 +176,13 @@ const $EmptyList = () => {
   $box.append($emptyPlanet, $emptyText);
   return $box;
 };
-const defaultPosterPath = "./default-poster.svg";
 const imagePathPreFix = "https://image.tmdb.org/t/p/w440_and_h660_face";
 const $MovieItem = ({ title, poster_path, vote_average }) => {
   const $rate = createElement("p", {
     className: "rate"
   });
   const $star = createElement("img", {
-    src: "./star_empty.png",
+    src: IMAGE_SRC.STAR_EMPTY,
     className: "star"
   });
   const $rateValue = createElement("span", {
@@ -192,7 +202,7 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
   });
   const $poster = createElement("img", {
     className: "thumbnail",
-    src: poster_path ? imagePathPreFix + poster_path : defaultPosterPath,
+    src: poster_path ? imagePathPreFix + poster_path : IMAGE_SRC.DEFAULT_POSTER_IMAGE,
     alt: title,
     loading: "lazy"
   });
@@ -369,7 +379,7 @@ const $SearchForm = () => {
     type: "submit"
   });
   const $searchIcon = createElement("img", {
-    src: "./search.svg",
+    src: IMAGE_SRC.SEARCH,
     alt: "search"
   });
   $searchButton.appendChild($searchIcon);
@@ -381,9 +391,9 @@ const $HeaderBox = () => {
   const $headerBox = createElement("div", {
     className: "header-box"
   });
-  const $logoLink = createElement("a", { href: "/" });
+  const $logoLink = createElement("a", { href: "/javascript-movie-review" });
   const $logoImage = createElement("img", {
-    src: "./logo.png",
+    src: IMAGE_SRC.LOGO,
     alt: "MovieList"
   });
   $logoLink.appendChild($logoImage);
