@@ -165,14 +165,24 @@ const $EmptyList = () => {
   $box.append($emptyPlanet, $emptyText);
   return $box;
 };
-const defaultPosterPath = "./default-poster.svg";
-const imagePathPreFix = "https://image.tmdb.org/t/p/w440_and_h660_face";
+const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+const POSTER_SIZES = {
+  MOVIE_DETAIL: "w440_and_h660_face"
+};
+const DEFAULT_POSTER_PATH = "./default-poster.svg";
+const LOADING_POSTER_PATH = "./loading-poster.svg";
+const ERROR_POSTER_PATH = "./error-poster.svg";
+const STAR_ICON_PATH = "./star_empty.png";
+const getPosterUrl = (posterPath, size = POSTER_SIZES.MOVIE_DETAIL) => {
+  if (!posterPath) return DEFAULT_POSTER_PATH;
+  return `${TMDB_IMAGE_BASE_URL}/${size}${posterPath}`;
+};
 const $MovieItem = ({ title, poster_path, vote_average }) => {
   const $rate = createElement("p", {
     className: "rate"
   });
   const $star = createElement("img", {
-    src: "./star_empty.png",
+    src: STAR_ICON_PATH,
     className: "star"
   });
   const $rateValue = createElement("span", {
@@ -192,10 +202,23 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
   });
   const $poster = createElement("img", {
     className: "thumbnail",
-    src: poster_path ? imagePathPreFix + poster_path : defaultPosterPath,
+    src: LOADING_POSTER_PATH,
     alt: title,
     loading: "lazy"
   });
+  if (poster_path) {
+    const posterUrl = getPosterUrl(poster_path);
+    const actualImage = new Image();
+    actualImage.src = posterUrl;
+    actualImage.onload = () => {
+      $poster.src = posterUrl;
+    };
+    actualImage.onerror = () => {
+      $poster.src = ERROR_POSTER_PATH;
+    };
+  } else {
+    $poster.src = DEFAULT_POSTER_PATH;
+  }
   $item.append($poster, $description);
   return $item;
 };
