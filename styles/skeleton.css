@@ -12,15 +12,17 @@
 
 .skeleton-list {
   display: grid;
-  grid-template-columns: repeat(5, 200px);
+  grid-template-columns: repeat(4, 1fr);
   justify-content: space-between;
-  gap: 70px;
-  width: 1280px;
+  gap: 40px;
+  max-width: 1280px;
+  width: 100%;
   margin: 4rem auto;
+  padding: 0 2rem;
 }
 
 .skeleton-item {
-  width: 200px;
+  width: 100%;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -41,4 +43,33 @@
   border-radius: 5px;
   margin-bottom: 10px;
   animation: pulse 1.5s infinite;
+}
+
+/* 반응형 디자인 */
+@media screen and (max-width: 1120px) {
+  .skeleton-list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .skeleton-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    padding: 0 1.5rem;
+  }
+}
+
+@media screen and (max-width: 580px) {
+  .skeleton-list {
+    grid-template-columns: repeat(1, 1fr);
+    gap: 40px;
+    padding: 0 1rem;
+  }
+
+  .skeleton-item {
+    max-width: 300px;
+    margin: 0 auto;
+  }
 }
