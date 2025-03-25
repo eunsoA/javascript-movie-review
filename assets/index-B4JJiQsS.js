@@ -71,6 +71,24 @@ const getPopularMovieList = async (page) => {
   }
   return response;
 };
+const POSTER_PATH = Object.freeze({
+  DEFAULT: "./default-poster.svg",
+  LOADING: "./loading-poster.svg",
+  ERROR: "./error-poster.svg"
+});
+const ICON_PATH = Object.freeze({
+  STAR_EMPTY: "./star_empty.svg",
+  STAR_FILLED: "./star_filled.svg",
+  SEARCH: "./search.svg",
+  MODAL_CLOSE: "./modal_button_close.svg"
+});
+const LOGO_PATH = Object.freeze({
+  LOGO: "./logo.svg",
+  WOOWACOURSE_LOGO: "./woowacourse_logo.png"
+});
+const IMAGE_PATH = Object.freeze({
+  EMPTY_PLANET: "./empty-planet.svg"
+});
 const createElement = (tag, props = {}) => {
   const element = document.createElement(tag);
   for (const [key, value] of Object.entries(props)) {
@@ -97,15 +115,31 @@ const $Banner = () => {
   const $backgroundContainer = createElement("div", {
     className: "background-container"
   });
-  $backgroundContainer.innerHTML = `
-  <div class="overlay" aria-hidden="true"></div>
-  <div class="top-rated-container">
-    <div class="rate">
-      <img src="./star_empty.svg" class="star" />
-      <span class="rate-value">9.5</span>
-    </div>
-    <div class="title">인사이드 아웃2</div>
-  </div>`;
+  const $overlay = createElement("div", {
+    className: "overlay",
+    ariaHidden: "true"
+  });
+  const $star = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star"
+  });
+  const $rateValue = createElement("span", {
+    className: "rate-value",
+    textContent: "9.5"
+  });
+  const $rate = createElement("div", {
+    className: "rate"
+  });
+  $rate.append($star, $rateValue);
+  const $title = createElement("div", {
+    className: "title",
+    textContent: "인사이드 아웃2"
+  });
+  const $topRatedContainer = createElement("div", {
+    className: "top-rated-container"
+  });
+  $topRatedContainer.append($rate, $title);
+  $backgroundContainer.append($overlay, $topRatedContainer);
   return $backgroundContainer;
 };
 const asyncErrorBoundary = async ({
@@ -120,24 +154,6 @@ const asyncErrorBoundary = async ({
     }
   }
 };
-const POSTER_PATH = Object.freeze({
-  DEFAULT: "./default-poster.svg",
-  LOADING: "./loading-poster.svg",
-  ERROR: "./error-poster.svg"
-});
-const ICON_PATH = Object.freeze({
-  STAR_EMPTY: "./star_empty.svg",
-  STAR_FILLED: "./star_filled.svg",
-  SEARCH: "./search.svg",
-  MODAL_CLOSE: "./modal_button_close.svg"
-});
-const LOGO_PATH = Object.freeze({
-  LOGO: "./logo.svg",
-  WOOWACOURSE_LOGO: "./woowacourse_logo.png"
-});
-const IMAGE_PATH = Object.freeze({
-  EMPTY_PLANET: "./empty-planet.svg"
-});
 const addErrorBox = (text) => {
   const $movieListSection = document.querySelector(
     ".movie-list-section"
