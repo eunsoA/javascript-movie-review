@@ -101,7 +101,7 @@ const $Banner = () => {
   <div class="overlay" aria-hidden="true"></div>
   <div class="top-rated-container">
     <div class="rate">
-      <img src="./star_empty.png" class="star" />
+      <img src="./star_empty.svg" class="star" />
       <span class="rate-value">9.5</span>
     </div>
     <div class="title">인사이드 아웃2</div>
@@ -120,6 +120,24 @@ const asyncErrorBoundary = async ({
     }
   }
 };
+const POSTER_PATH = Object.freeze({
+  DEFAULT: "./default-poster.svg",
+  LOADING: "./loading-poster.svg",
+  ERROR: "./error-poster.svg"
+});
+const ICON_PATH = Object.freeze({
+  STAR_EMPTY: "./star_empty.svg",
+  STAR_FILLED: "./star_filled.svg",
+  SEARCH: "./search.svg",
+  MODAL_CLOSE: "./modal_button_close.svg"
+});
+const LOGO_PATH = Object.freeze({
+  LOGO: "./logo.svg",
+  WOOWACOURSE_LOGO: "./woowacourse_logo.png"
+});
+const IMAGE_PATH = Object.freeze({
+  EMPTY_PLANET: "./empty-planet.svg"
+});
 const addErrorBox = (text) => {
   const $movieListSection = document.querySelector(
     ".movie-list-section"
@@ -128,7 +146,7 @@ const addErrorBox = (text) => {
 };
 const $ErrorBox = ({ text }) => {
   const $errorPlanet = createElement("img", {
-    src: "./empty-planet.svg",
+    src: IMAGE_PATH.EMPTY_PLANET,
     className: "empty-planet",
     alt: text
   });
@@ -152,7 +170,7 @@ const getSearchedMovieList = async (query, page) => {
 };
 const $EmptyList = () => {
   const $emptyPlanet = createElement("img", {
-    src: "./empty-planet.svg",
+    src: IMAGE_PATH.EMPTY_PLANET,
     className: "empty-planet",
     alt: "검색 결과가 없습니다."
   });
@@ -169,12 +187,8 @@ const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 const POSTER_SIZES = {
   MOVIE_DETAIL: "w440_and_h660_face"
 };
-const DEFAULT_POSTER_PATH = "./default-poster.svg";
-const LOADING_POSTER_PATH = "./loading-poster.svg";
-const ERROR_POSTER_PATH = "./error-poster.svg";
-const STAR_ICON_PATH = "./star_empty.png";
 const getPosterUrl = (posterPath, size = POSTER_SIZES.MOVIE_DETAIL) => {
-  if (!posterPath) return DEFAULT_POSTER_PATH;
+  if (!posterPath) return POSTER_PATH.DEFAULT;
   return `${TMDB_IMAGE_BASE_URL}/${size}${posterPath}`;
 };
 const $MovieItem = ({ title, poster_path, vote_average }) => {
@@ -182,7 +196,7 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
     className: "rate"
   });
   const $star = createElement("img", {
-    src: STAR_ICON_PATH,
+    src: ICON_PATH.STAR_EMPTY,
     className: "star"
   });
   const $rateValue = createElement("span", {
@@ -202,7 +216,7 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
   });
   const $poster = createElement("img", {
     className: "thumbnail",
-    src: LOADING_POSTER_PATH,
+    src: POSTER_PATH.LOADING,
     alt: title,
     loading: "lazy"
   });
@@ -214,10 +228,10 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
       $poster.src = posterUrl;
     };
     actualImage.onerror = () => {
-      $poster.src = ERROR_POSTER_PATH;
+      $poster.src = POSTER_PATH.ERROR;
     };
   } else {
-    $poster.src = DEFAULT_POSTER_PATH;
+    $poster.src = POSTER_PATH.DEFAULT;
   }
   $item.append($poster, $description);
   return $item;
@@ -392,7 +406,7 @@ const $SearchForm = () => {
     type: "submit"
   });
   const $searchIcon = createElement("img", {
-    src: "./search.svg",
+    src: ICON_PATH.SEARCH,
     alt: "search"
   });
   $searchButton.appendChild($searchIcon);
@@ -406,7 +420,7 @@ const $HeaderBox = () => {
   });
   const $logoLink = createElement("a", { href: "/javascript-movie-review" });
   const $logoImage = createElement("img", {
-    src: "./logo.png",
+    src: LOGO_PATH.LOGO,
     alt: "MovieList"
   });
   $logoLink.appendChild($logoImage);
