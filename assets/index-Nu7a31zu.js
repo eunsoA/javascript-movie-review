@@ -128,7 +128,7 @@ const $Banner = () => {
     textContent: "9.5"
   });
   const $rate = createElement("div", {
-    className: "rate"
+    className: ["banner-rate", "rate"]
   });
   $rate.append($star, $rateValue);
   const $title = createElement("div", {
