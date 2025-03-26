@@ -49,7 +49,7 @@ button.primary {
 }
 
 #wrap h2 {
-  font-size: 1.85rem;
+  font-size: 2.2rem;
   font-weight: bold;
   margin-bottom: 3.5rem;
 }
@@ -126,12 +126,12 @@ button.primary {
 
 .top-rated-container {
   user-select: none;
-  position: relative;
+  /* position: relative; */
   z-index: 2;
   width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  max-width: 800px;
+  margin: 4rem auto 0;
+  padding: 8rem 5rem 4rem;
 }
 
 .top-rated-container > *:not(:last-child) {
@@ -160,7 +160,7 @@ span.rate-value {
 }
 
 .title {
-  font-size: 3rem;
+  font-size: 4rem;
   font-weight: bold;
 }
 
@@ -179,20 +179,20 @@ footer.footer p:not(:last-child) {
 }
 
 /* 반응형 디자인 */
+@media screen and (max-width: 1120px) {
+  .title {
+    font-size: 2.7rem;
+  }
+}
+
 @media screen and (max-width: 800px) {
   .title {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
   }
 
   #wrap h2 {
     font-size: 1.5rem;
     margin-bottom: 2.5rem;
-  }
-}
-
-@media screen and (max-width: 580px) {
-  .title {
-    font-size: 2rem;
   }
 
   .banner-open {
@@ -201,9 +201,5 @@ footer.footer p:not(:last-child) {
 
   .background-container {
     height: 400px;
-  }
-
-  .header-box {
-    margin-top: 1.5rem;
   }
 }

@@ -8,19 +8,22 @@
   align-items: center;
 }
 
+.movie-list-section {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
 .movie-list-box {
-  padding: 0 2rem;
-  max-width: 1280px;
-  width: 100%;
+  max-width: 1120px;
   margin: 4rem auto;
 }
 
 .thumbnail-list {
-  margin: 0 auto 56px;
+  margin: 0 0 56px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 200px);
   justify-content: space-between;
-  gap: 40px;
+  gap: 3.3rem;
 }
 
 .empty-box {
@@ -41,10 +44,9 @@
 }
 
 .thumbnail {
-  width: 100%;
+  width: 200px;
   height: 300px;
   border-radius: 8px;
-  object-fit: cover;
 }
 
 .item-desc {
@@ -96,42 +98,40 @@ p.rate > span {
 
 /* 반응형 디자인 */
 @media screen and (max-width: 1120px) {
+  .movie-list-section {
+    max-width: 768px;
+    margin: 0 auto;
+  }
+
   .thumbnail-list {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
+    grid-template-columns: repeat(3, 200px);
+    gap: 4.38rem;
+  }
+  .thumbnail-list-title {
+    width: 800px;
   }
 }
 
 @media screen and (max-width: 800px) {
-  .thumbnail-list {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 25px;
+  .movie-list-section {
+    max-width: 300px;
+    margin: 0 auto;
   }
 
-  .movie-list-box {
-    padding: 0 1.5rem;
-  }
-}
-
-@media screen and (max-width: 580px) {
   .thumbnail-list {
-    grid-template-columns: repeat(1, 1fr);
-    gap: 40px;
+    grid-template-columns: repeat(1, 200px);
+    gap: 4.38rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .thumbnail-list-title {
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .movie-list-box {
     padding: 0 1rem;
-  }
-
-  .thumbnail {
-    max-width: 300px;
-    margin: 0 auto;
-    display: block;
-  }
-
-  .item-desc {
-    max-width: 300px;
-    margin-left: auto;
-    margin-right: auto;
   }
 }

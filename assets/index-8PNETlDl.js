@@ -362,7 +362,8 @@ const $MovieListBoxRender = () => {
   const $MovieListBox2 = ({ title, movieResult }) => {
     const $fragment = document.createDocumentFragment();
     const $title = createElement("h2", {
-      textContent: title
+      textContent: title,
+      className: "thumbnail-list-title"
     });
     const $movieList = $MovieList(movieResult.results);
     $fragment.append($title, $movieList);
@@ -462,7 +463,7 @@ const initPopularMovieListRender = async () => {
   replaceSkeletonList();
   const popularMovieListResult = await getPopularMovieList(1);
   replaceMovieListBox({
-    title: "인기있는 영화",
+    title: "지금 인기있는 영화",
     movieResult: popularMovieListResult
   });
 };
