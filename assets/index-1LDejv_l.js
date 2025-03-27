@@ -309,12 +309,9 @@ const $SkeletonList = () => {
   $skeletonList.append(...Array.from({ length: 20 }, () => $SkeletonItem()));
   return $skeletonList;
 };
-const removeMoreButton = ({ condition }) => {
-  if (!condition) {
-    return;
-  }
-  const $moreButton = document.querySelector(".more-button");
-  $moreButton == null ? void 0 : $moreButton.remove();
+const removeLoadingObserver = () => {
+  const $loadingObserver = document.querySelector(".loading-observer");
+  $loadingObserver == null ? void 0 : $loadingObserver.remove();
 };
 const renderMoreMovieList = async ({
   currentPage,
@@ -322,7 +319,9 @@ const renderMoreMovieList = async ({
 }) => {
   addSkeletonItems();
   const { page, total_pages, results } = await fetchFn(currentPage);
-  removeMoreButton({ condition: page === total_pages });
+  if (page === total_pages) {
+    removeLoadingObserver();
+  }
   removeSkeletonItems();
   addMovieItem(results);
 };
@@ -330,10 +329,17 @@ const $MovieListBoxRender = () => {
   const movieState = {
     type: "popular",
     keyword: "",
-    page: 1
+    page: 1,
+    isLoading: false
   };
+  let observer = null;
   const initCurrentPage2 = () => {
     movieState.page = 1;
+    movieState.isLoading = false;
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
   };
   const setMovieListType2 = (type) => {
     movieState.type = type;
@@ -341,25 +347,48 @@ const $MovieListBoxRender = () => {
   const setKeyword2 = (keyword) => {
     movieState.keyword = keyword;
   };
-  const handleMoreButtonClick = async () => {
+  const loadMoreMovies = async () => {
+    if (movieState.isLoading) return;
+    movieState.isLoading = true;
     movieState.page += 1;
     if (movieState.type === "popular") {
-      asyncErrorBoundary({
+      await asyncErrorBoundary({
         asyncFn: () => renderMoreMovieList({
           currentPage: movieState.page,
           fetchFn: getPopularMovieList
         }),
         fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
       });
-      return;
+    } else {
+      await asyncErrorBoundary({
+        asyncFn: () => renderMoreMovieList({
+          currentPage: movieState.page,
+          fetchFn: (page) => getSearchedMovieList(movieState.keyword, page)
+        }),
+        fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
+      });
     }
-    asyncErrorBoundary({
-      asyncFn: () => renderMoreMovieList({
-        currentPage: movieState.page,
-        fetchFn: (page) => getSearchedMovieList(movieState.keyword, page)
-      }),
-      fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
+    movieState.isLoading = false;
+  };
+  const setupInfiniteScroll = (totalPages) => {
+    var _a;
+    if (movieState.page >= totalPages) return;
+    const $loadingObserver = document.querySelector(".loading-observer") || createElement("div", {
+      className: "loading-observer"
     });
+    (_a = document.querySelector(".movie-list-box")) == null ? void 0 : _a.appendChild($loadingObserver);
+    observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !movieState.isLoading) {
+          loadMoreMovies();
+        }
+      },
+      {
+        rootMargin: "100px"
+      }
+    );
+    observer.observe($loadingObserver);
   };
   const $MovieListBox2 = ({ title, movieResult }) => {
     const $fragment = document.createDocumentFragment();
@@ -369,19 +398,13 @@ const $MovieListBoxRender = () => {
     });
     const $movieList = $MovieList(movieResult.results);
     $fragment.append($title, $movieList);
-    if (movieResult.page !== movieResult.total_pages) {
-      const $moreButton = createElement("button", {
-        type: "button",
-        className: "more-button",
-        textContent: "더 보기"
-      });
-      $moreButton.addEventListener("click", handleMoreButtonClick);
-      $fragment.appendChild($moreButton);
-    }
     const $movieListBox = createElement("div", {
       className: "movie-list-box"
     });
     $movieListBox.appendChild($fragment);
+    setTimeout(() => {
+      setupInfiniteScroll(movieResult.total_pages);
+    }, 0);
     return $movieListBox;
   };
   return { initCurrentPage: initCurrentPage2, setKeyword: setKeyword2, setMovieListType: setMovieListType2, $MovieListBox: $MovieListBox2 };

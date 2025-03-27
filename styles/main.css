@@ -164,6 +164,11 @@ h1.logo {
   font-weight: bold;
 }
 
+.loading-observer {
+  height: 10px;
+  margin-top: 20px;
+}
+
 footer.footer {
   min-height: 180px;
   background-color: var(--color-bluegray-80);
@@ -178,17 +183,12 @@ footer.footer p:not(:last-child) {
   margin-bottom: 8px;
 }
 
-/* 반응형 디자인 */
-@media screen and (max-width: 1120px) {
-}
-
 @media screen and (max-width: 800px) {
   .title {
     font-size: 1.5rem;
   }
 
   #wrap h2 {
-    font-size: 1.5rem;
     margin-bottom: 2.5rem;
   }
 
