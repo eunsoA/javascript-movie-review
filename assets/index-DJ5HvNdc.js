@@ -292,15 +292,17 @@ const replaceSkeletonList = () => {
   );
   $movieListSection.replaceChildren($SkeletonList());
 };
-const addSkeletonList = () => {
-  const $movieListSection = document.querySelector(
-    ".thumbnail-list"
-  );
-  $movieListSection.appendChild($SkeletonList());
+const addSkeletonItems = () => {
+  const $thumbnailList = document.querySelector(".thumbnail-list");
+  if (!$thumbnailList) return;
+  const $skeletonList = Array.from({ length: 20 }, () => $SkeletonItem());
+  $thumbnailList.append(...$skeletonList);
 };
-const removeSkeletonList = () => {
-  const $skeletonList = document.querySelector(".skeleton-list");
-  $skeletonList == null ? void 0 : $skeletonList.remove();
+const removeSkeletonItems = () => {
+  const $skeletonItems = document.querySelectorAll(".skeleton-item");
+  $skeletonItems.forEach((item) => {
+    item.remove();
+  });
 };
 const $SkeletonList = () => {
   const $skeletonList = createElement("ul", { className: "skeleton-list" });
@@ -318,10 +320,10 @@ const renderMoreMovieList = async ({
   currentPage,
   fetchFn
 }) => {
-  addSkeletonList();
+  addSkeletonItems();
   const { page, total_pages, results } = await fetchFn(currentPage);
   removeMoreButton({ condition: page === total_pages });
-  removeSkeletonList();
+  removeSkeletonItems();
   addMovieItem(results);
 };
 const $MovieListBoxRender = () => {
