@@ -135,10 +135,14 @@ const $Banner = () => {
     className: "title",
     textContent: "인사이드 아웃2"
   });
+  const $detailButton = createElement("button", {
+    className: "detail-button",
+    textContent: "자세히 보기"
+  });
   const $topRatedContainer = createElement("div", {
     className: "top-rated-container"
   });
-  $topRatedContainer.append($rate, $title);
+  $topRatedContainer.append($rate, $title, $detailButton);
   $backgroundContainer.append($overlay, $topRatedContainer);
   return $backgroundContainer;
 };
@@ -207,7 +211,8 @@ const getPosterUrl = (posterPath, size = POSTER_SIZES.MOVIE_DETAIL) => {
   if (!posterPath) return POSTER_PATH.DEFAULT;
   return `${TMDB_IMAGE_BASE_URL}/${size}${posterPath}`;
 };
-const $MovieItem = ({ title, poster_path, vote_average }) => {
+const MOVIE_ITEM_CLICK = "movie-item:click";
+const $MovieItem = ({ id, title, poster_path, vote_average }) => {
   const $rate = createElement("p", {
     className: "rate"
   });
@@ -250,6 +255,13 @@ const $MovieItem = ({ title, poster_path, vote_average }) => {
     $poster.src = POSTER_PATH.DEFAULT;
   }
   $item.append($poster, $description);
+  $item.addEventListener("click", () => {
+    const event = new CustomEvent(MOVIE_ITEM_CLICK, {
+      detail: { movieId: id },
+      bubbles: true
+    });
+    $item.dispatchEvent(event);
+  });
   return $item;
 };
 const addMovieItem = (movieList) => {
@@ -469,6 +481,307 @@ const $HeaderBox = () => {
   $headerBox.append($logoLink, $SearchForm());
   return $headerBox;
 };
+const RATING_TEXTS = Object.freeze({
+  "0": "내 평점을 남겨주세요",
+  "1": "최악이예요",
+  "2": "별로예요",
+  "3": "보통이에요",
+  "4": "재미있어요",
+  "5": "명작이예요"
+});
+const movieRatingUtil = {
+  getRatings() {
+    const ratings = localStorage.getItem("movie_rate");
+    return ratings ? JSON.parse(ratings) : {};
+  },
+  getRating(movieId) {
+    const ratings = this.getRatings();
+    return ratings[movieId] || 0;
+  },
+  saveRating(movieId, rating) {
+    const ratings = this.getRatings();
+    ratings[movieId] = rating;
+    localStorage.setItem("movie_rate", JSON.stringify(ratings));
+  }
+};
+const handleModal = {
+  open() {
+    const $modal2 = document.getElementById("modalBackground");
+    if (!$modal2) return;
+    $modal2.classList.add("active");
+    document.body.classList.add("modal-open");
+  },
+  close() {
+    const $modal2 = document.getElementById("modalBackground");
+    if (!$modal2) return;
+    $modal2.classList.remove("active");
+    document.body.classList.remove("modal-open");
+  },
+  updateModalContent(movieData) {
+    var _a;
+    const $modal2 = document.getElementById("modalBackground");
+    if (!$modal2) return;
+    const posterUrl = getPosterUrl(movieData.poster_path);
+    window.currentMovieId = movieData.id;
+    const $image = $modal2.querySelector(".modal-image img");
+    if ($image) $image.src = posterUrl;
+    const $title = $modal2.querySelector(".modal-description h2");
+    if ($title) $title.textContent = movieData.title;
+    const $category = $modal2.querySelector(".category");
+    if ($category)
+      $category.textContent = movieData.release_year + " · " + movieData.genres.join(", ") || "";
+    const $rateValue = $modal2.querySelector(".rate span");
+    if ($rateValue)
+      $rateValue.textContent = ((_a = movieData.vote_average) == null ? void 0 : _a.toFixed(1)) || "0.0";
+    const $detail = $modal2.querySelector(".detail");
+    if ($detail)
+      $detail.textContent = movieData.overview || "(줄거리 내용이 없습니다.)";
+    this.loadUserRating(movieData.id);
+    this.open();
+  },
+  loadUserRating(movieId) {
+    const ratingValue = movieRatingUtil.getRating(movieId);
+    this.updateStars(ratingValue);
+  },
+  updateStars(ratingValue) {
+    for (let i = 1; i <= 5; i++) {
+      const star = document.getElementById(
+        `userRateStar${i}`
+      );
+      if (star) {
+        star.src = i <= ratingValue ? ICON_PATH.STAR_FILLED : ICON_PATH.STAR_EMPTY;
+      }
+    }
+    this.updateRatingText(ratingValue);
+  },
+  updateRatingText(ratingValue) {
+    const $rateText = document.getElementById("userRateText");
+    const $rateValue = document.getElementById("userRateValue");
+    if ($rateText) {
+      $rateText.textContent = RATING_TEXTS[String(ratingValue)] || RATING_TEXTS["0"];
+    }
+    if ($rateValue) {
+      $rateValue.textContent = `(${ratingValue * 2}/10)`;
+    }
+  },
+  saveRating(movieId, rating) {
+    movieRatingUtil.saveRating(movieId, rating);
+    this.updateStars(rating);
+  }
+};
+const $Modal = () => {
+  const $modal2 = createElement("div", {
+    className: "modal-background",
+    id: "modalBackground"
+  });
+  const $modalElement = createElement("div", {
+    className: "modal"
+  });
+  const $closeButton = createElement("button", {
+    className: "close-modal",
+    id: "closeModal"
+  });
+  const $closeImage = createElement("img", {
+    src: ICON_PATH.MODAL_CLOSE
+  });
+  $closeButton.appendChild($closeImage);
+  const $modalContainer = createElement("div", {
+    className: "modal-container"
+  });
+  const $modalImage = createElement("div", {
+    className: "modal-image"
+  });
+  const $image = createElement("img", {
+    src: ""
+  });
+  $modalImage.appendChild($image);
+  const $modalDescription = createElement("div", {
+    className: "modal-description"
+  });
+  const $title = createElement("h2", {
+    textContent: "",
+    className: "title"
+  });
+  const $category = createElement("p", {
+    className: "category",
+    textContent: ""
+  });
+  const $rateContainer = createElement("div", {
+    className: "rate-container"
+  });
+  const $rateTitle = createElement("span", {
+    textContent: "평균"
+  });
+  const $rate = createElement("p", {
+    className: "rate"
+  });
+  const $star = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star"
+  });
+  const $rateValue = createElement("span", {
+    textContent: ""
+  });
+  $rate.append($star, $rateValue);
+  $rateContainer.append($rateTitle, $rate);
+  const $rateHr = createElement("hr", {});
+  const $userRateHr = createElement("hr", {});
+  const $userRateContainer = createElement("div", {
+    className: "user-rate-container"
+  });
+  const $userRateTitle = createElement("h3", {
+    textContent: "내 별점",
+    className: "container-title"
+  });
+  const $userRate = createElement("div", {
+    className: "user-rate"
+  });
+  const $userRateStars = createElement("div", {
+    className: "user-rate-stars"
+  });
+  const $userRateStar1 = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star",
+    id: "userRateStar1"
+  });
+  $userRateStar1.dataset.value = "1";
+  const $userRateStar2 = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star",
+    id: "userRateStar2"
+  });
+  $userRateStar2.dataset.value = "2";
+  const $userRateStar3 = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star",
+    id: "userRateStar3"
+  });
+  $userRateStar3.dataset.value = "3";
+  const $userRateStar4 = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star",
+    id: "userRateStar4"
+  });
+  $userRateStar4.dataset.value = "4";
+  const $userRateStar5 = createElement("img", {
+    src: ICON_PATH.STAR_EMPTY,
+    className: "star",
+    id: "userRateStar5"
+  });
+  $userRateStar5.dataset.value = "5";
+  $userRateStars.append(
+    $userRateStar1,
+    $userRateStar2,
+    $userRateStar3,
+    $userRateStar4,
+    $userRateStar5
+  );
+  const $userRateTextContainer = createElement("div", {
+    className: "user-rate-text-container"
+  });
+  const $userRateText = createElement("p", {
+    textContent: "내 평점을 남겨주세요",
+    className: "user-rate-text",
+    id: "userRateText"
+  });
+  const $userRateValue = createElement("p", {
+    textContent: "(0/10)",
+    className: "user-rate-value",
+    id: "userRateValue"
+  });
+  $userRateTextContainer.append($userRateText, $userRateValue);
+  $userRate.append($userRateStars, $userRateTextContainer);
+  $userRateContainer.append($userRateTitle, $userRate);
+  const $detailContainer = createElement("div", {
+    className: "detail-container"
+  });
+  const $detailTitle = createElement("h3", {
+    textContent: "줄거리",
+    className: "container-title"
+  });
+  const $detail = createElement("p", {
+    className: "detail",
+    textContent: ""
+  });
+  $detailContainer.append($detailTitle, $detail);
+  $modalDescription.append(
+    $title,
+    $category,
+    $rateContainer,
+    $rateHr,
+    $userRateContainer,
+    $userRateHr,
+    $detailContainer
+  );
+  $modalContainer.append($modalImage, $modalDescription);
+  $modalElement.append($closeButton, $modalContainer);
+  $modal2.appendChild($modalElement);
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      handleModal.close();
+    }
+  };
+  document.addEventListener("keydown", handleKeyDown);
+  $closeButton.addEventListener("click", handleModal.close);
+  $modal2.addEventListener("click", (e) => {
+    if (e.target === $modal2) {
+      handleModal.close();
+    }
+  });
+  const handleStarClick = (e) => {
+    const target = e.target;
+    if (target.classList.contains("star") && target.dataset.value) {
+      const value = parseInt(target.dataset.value);
+      const currentMovieId = window.currentMovieId;
+      if (currentMovieId) {
+        handleModal.saveRating(currentMovieId, value);
+      }
+    }
+  };
+  $userRateStars.addEventListener("click", handleStarClick);
+  return $modal2;
+};
+const transformMovieDetail = (tmdbDetail) => {
+  const safeParseDate = (dateString) => {
+    try {
+      const date = new Date(dateString).getFullYear();
+      return isNaN(date) ? 0 : date;
+    } catch (error) {
+      return 0;
+    }
+  };
+  return {
+    id: tmdbDetail.id,
+    title: tmdbDetail.title,
+    overview: tmdbDetail.overview,
+    poster_path: tmdbDetail.poster_path,
+    backdrop_path: tmdbDetail.backdrop_path,
+    vote_average: tmdbDetail.vote_average,
+    genres: tmdbDetail.genres.map((genre) => genre.name),
+    release_year: safeParseDate(tmdbDetail.release_date)
+  };
+};
+const getMovieDetail = async (movieId) => {
+  const response = await tmdbClient.get(`/movie/${movieId}?language=ko-KR`);
+  if ("status_message" in response) {
+    throw new Error(response.status_message);
+  }
+  return transformMovieDetail(response);
+};
+const handleMovieDetailEvent = (event) => {
+  const { movieId } = event.detail;
+  getMovieDetail(movieId).then((movieDetail) => {
+    handleModal.updateModalContent(movieDetail);
+  }).catch((error) => {
+    console.error("영화 상세 정보를 가져오는 중 오류 발생:", error);
+  });
+};
+const registerMovieDetailEventListener = () => {
+  document.addEventListener(
+    MOVIE_ITEM_CLICK,
+    handleMovieDetailEvent
+  );
+};
 const replaceMovieListBox = ({
   title,
   movieResult
@@ -494,6 +807,9 @@ const initPopularMovieListRender = async () => {
 };
 const $header = document.querySelector("header");
 $header == null ? void 0 : $header.append($Banner(), $HeaderBox());
+const $modal = $Modal();
+document.body.append($modal);
+registerMovieDetailEventListener();
 asyncErrorBoundary({
   asyncFn: () => initPopularMovieListRender(),
   fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
