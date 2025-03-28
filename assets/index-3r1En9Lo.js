@@ -482,7 +482,7 @@ const $HeaderBox = () => {
   return $headerBox;
 };
 const RATING_TEXTS = Object.freeze({
-  "0": "내 평점을 남겨주세요",
+  "0": "평점 남기기",
   "1": "최악이예요",
   "2": "별로예요",
   "3": "보통이에요",
