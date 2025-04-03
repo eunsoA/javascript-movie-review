@@ -51,10 +51,22 @@ class HTTPClient {
       "Content-Type": "application/json",
       ...this.apiKey && { Authorization: `Bearer ${this.apiKey}` }
     };
-    const response = await fetch(this.baseUrl + url, {
-      headers
-    });
-    return response.json();
+    try {
+      const response = await fetch(this.baseUrl + url, {
+        headers
+      });
+      const data = await response.json();
+      if ("status_message" in data) {
+        throw new Error(data.status_message);
+      }
+      return data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error("API 요청 중 오류가 발생했습니다.");
+      }
+    }
   }
   setApiKey(apiKey) {
     this.apiKey = apiKey;
@@ -71,24 +83,23 @@ const getPopularMovieList = async (page) => {
   }
   return response;
 };
-const POSTER_PATH = Object.freeze({
+const POSTER_PATH = {
   DEFAULT: "./default-poster.svg",
   LOADING: "./loading-poster.svg",
   ERROR: "./error-poster.svg"
-});
-const ICON_PATH = Object.freeze({
+};
+const ICON_PATH = {
   STAR_EMPTY: "./star_empty.svg",
   STAR_FILLED: "./star_filled.svg",
   SEARCH: "./search.svg",
   MODAL_CLOSE: "./modal_button_close.svg"
-});
-const LOGO_PATH = Object.freeze({
-  LOGO: "./logo.svg",
-  WOOWACOURSE_LOGO: "./woowacourse_logo.png"
-});
-const IMAGE_PATH = Object.freeze({
+};
+const LOGO_PATH = {
+  LOGO: "./logo.svg"
+};
+const IMAGE_PATH = {
   EMPTY_PLANET: "./empty-planet.svg"
-});
+};
 const createElement = (tag, props = {}) => {
   const element = document.createElement(tag);
   for (const [key, value] of Object.entries(props)) {
@@ -121,6 +132,7 @@ const $Banner = () => {
   });
   const $star = createElement("img", {
     src: ICON_PATH.STAR_EMPTY,
+    alt: "star_empty",
     className: "star"
   });
   const $rateValue = createElement("span", {
@@ -162,7 +174,15 @@ const addErrorBox = (text) => {
   const $movieListSection = document.querySelector(
     ".movie-list-section"
   );
-  $movieListSection.replaceChildren($ErrorBox({ text }));
+  const $errorBox = $ErrorBox({ text });
+  $movieListSection.appendChild($errorBox);
+  return $errorBox;
+};
+const removeErrorBox = () => {
+  const $errorBox = document.querySelector(".error-box");
+  if ($errorBox) {
+    $errorBox.remove();
+  }
 };
 const $ErrorBox = ({ text }) => {
   const $errorPlanet = createElement("img", {
@@ -180,13 +200,12 @@ const $ErrorBox = ({ text }) => {
   return $box;
 };
 const getSearchedMovieList = async (query, page) => {
-  const response = await tmdbClient.get(
-    `/search/movie?query=${query}&language=ko-KR&page=${page}`
-  );
-  if ("status_message" in response) {
-    throw new Error(response.status_message);
-  }
-  return response;
+  const params = new URLSearchParams({
+    query,
+    language: "ko-KR",
+    page: page.toString()
+  });
+  return await tmdbClient.get(`/search/movie?${params.toString()}`);
 };
 const $EmptyList = () => {
   const $emptyPlanet = createElement("img", {
@@ -218,6 +237,7 @@ const $MovieItem = ({ id, title, poster_path, vote_average }) => {
   });
   const $star = createElement("img", {
     src: ICON_PATH.STAR_EMPTY,
+    alt: "star_empty",
     className: "star"
   });
   const $rateValue = createElement("span", {
@@ -243,14 +263,14 @@ const $MovieItem = ({ id, title, poster_path, vote_average }) => {
   });
   if (poster_path) {
     const posterUrl = getPosterUrl(poster_path);
-    const actualImage = new Image();
-    actualImage.src = posterUrl;
-    actualImage.onload = () => {
+    const preloadImage = new Image();
+    preloadImage.onload = () => {
       $poster.src = posterUrl;
     };
-    actualImage.onerror = () => {
+    preloadImage.onerror = () => {
       $poster.src = POSTER_PATH.ERROR;
     };
+    preloadImage.src = posterUrl;
   } else {
     $poster.src = POSTER_PATH.DEFAULT;
   }
@@ -345,46 +365,13 @@ const $MovieListBoxRender = () => {
     isLoading: false
   };
   let observer = null;
-  const initCurrentPage2 = () => {
-    movieState.page = 1;
-    movieState.isLoading = false;
+  const setupInfiniteScroll = (totalPages) => {
+    var _a;
+    if (movieState.page >= totalPages) return;
     if (observer) {
       observer.disconnect();
       observer = null;
     }
-  };
-  const setMovieListType2 = (type) => {
-    movieState.type = type;
-  };
-  const setKeyword2 = (keyword) => {
-    movieState.keyword = keyword;
-  };
-  const loadMoreMovies = async () => {
-    if (movieState.isLoading) return;
-    movieState.isLoading = true;
-    movieState.page += 1;
-    if (movieState.type === "popular") {
-      await asyncErrorBoundary({
-        asyncFn: () => renderMoreMovieList({
-          currentPage: movieState.page,
-          fetchFn: getPopularMovieList
-        }),
-        fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
-      });
-    } else {
-      await asyncErrorBoundary({
-        asyncFn: () => renderMoreMovieList({
-          currentPage: movieState.page,
-          fetchFn: (page) => getSearchedMovieList(movieState.keyword, page)
-        }),
-        fallbackComponent: (errorMessage) => addErrorBox(errorMessage)
-      });
-    }
-    movieState.isLoading = false;
-  };
-  const setupInfiniteScroll = (totalPages) => {
-    var _a;
-    if (movieState.page >= totalPages) return;
     const $loadingObserver = document.querySelector(".loading-observer") || createElement("div", {
       className: "loading-observer"
     });
@@ -401,6 +388,59 @@ const $MovieListBoxRender = () => {
       }
     );
     observer.observe($loadingObserver);
+  };
+  const initCurrentPage2 = () => {
+    movieState.page = 1;
+    movieState.isLoading = false;
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    removeLoadingObserver();
+    removeErrorBox();
+  };
+  const setMovieListType2 = (type) => {
+    movieState.type = type;
+  };
+  const setKeyword2 = (keyword) => {
+    movieState.keyword = keyword;
+  };
+  const loadMoreMovies = async () => {
+    if (movieState.isLoading) return;
+    movieState.isLoading = true;
+    const originalPage = movieState.page;
+    movieState.page += 1;
+    let success = false;
+    try {
+      if (movieState.type === "popular") {
+        await asyncErrorBoundary({
+          asyncFn: () => renderMoreMovieList({
+            currentPage: movieState.page,
+            fetchFn: getPopularMovieList
+          }),
+          fallbackComponent: (errorMessage) => {
+            addErrorBox(errorMessage);
+          }
+        });
+      } else {
+        await asyncErrorBoundary({
+          asyncFn: () => renderMoreMovieList({
+            currentPage: movieState.page,
+            fetchFn: (page) => getSearchedMovieList(movieState.keyword, page)
+          }),
+          fallbackComponent: (errorMessage) => {
+            addErrorBox(errorMessage);
+          }
+        });
+      }
+      success = true;
+    } catch (error) {
+      success = false;
+    }
+    if (!success) {
+      movieState.page = originalPage;
+    }
+    movieState.isLoading = false;
   };
   const $MovieListBox2 = ({ title, movieResult }) => {
     const $fragment = document.createDocumentFragment();
@@ -419,7 +459,12 @@ const $MovieListBoxRender = () => {
     }, 0);
     return $movieListBox;
   };
-  return { initCurrentPage: initCurrentPage2, setKeyword: setKeyword2, setMovieListType: setMovieListType2, $MovieListBox: $MovieListBox2 };
+  return {
+    initCurrentPage: initCurrentPage2,
+    setKeyword: setKeyword2,
+    setMovieListType: setMovieListType2,
+    $MovieListBox: $MovieListBox2
+  };
 };
 const { initCurrentPage, setKeyword, setMovieListType, $MovieListBox } = $MovieListBoxRender();
 const handleSearchFormSubmit = async (event) => {
@@ -481,18 +526,35 @@ const $HeaderBox = () => {
   $headerBox.append($logoLink, $SearchForm());
   return $headerBox;
 };
-const RATING_TEXTS = Object.freeze({
+const RATING_TEXTS = {
   "0": "평점 남기기",
   "1": "최악이예요",
   "2": "별로예요",
   "3": "보통이에요",
   "4": "재미있어요",
   "5": "명작이예요"
-});
+};
+const getItemFromStorage = (key, defaultValue) => {
+  try {
+    const item = localStorage.getItem(key);
+    if (!item) return defaultValue;
+    return JSON.parse(item);
+  } catch (error) {
+    console.error(`로컬 스토리지 데이터 파싱 오류 (${key}):`, error);
+    return defaultValue;
+  }
+};
+const setItemToStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`로컬 스토리지 데이터 저장 오류 (${key}):`, error);
+  }
+};
+const MOVIE_RATINGS_KEY = "movie_rate";
 const movieRatingUtil = {
   getRatings() {
-    const ratings = localStorage.getItem("movie_rate");
-    return ratings ? JSON.parse(ratings) : {};
+    return getItemFromStorage(MOVIE_RATINGS_KEY, {});
   },
   getRating(movieId) {
     const ratings = this.getRatings();
@@ -501,28 +563,19 @@ const movieRatingUtil = {
   saveRating(movieId, rating) {
     const ratings = this.getRatings();
     ratings[movieId] = rating;
-    localStorage.setItem("movie_rate", JSON.stringify(ratings));
+    setItemToStorage(MOVIE_RATINGS_KEY, ratings);
   }
 };
 const handleModal = {
-  open() {
-    const $modal2 = document.getElementById("modalBackground");
-    if (!$modal2) return;
-    $modal2.classList.add("active");
-    document.body.classList.add("modal-open");
-  },
-  close() {
-    const $modal2 = document.getElementById("modalBackground");
-    if (!$modal2) return;
-    $modal2.classList.remove("active");
-    document.body.classList.remove("modal-open");
-  },
   updateModalContent(movieData) {
     var _a;
     const $modal2 = document.getElementById("modalBackground");
     if (!$modal2) return;
     const posterUrl = getPosterUrl(movieData.poster_path);
-    window.currentMovieId = movieData.id;
+    const $modalElement = $modal2.querySelector(".modal");
+    if ($modalElement) {
+      $modalElement.dataset.movieId = movieData.id.toString();
+    }
     const $image = $modal2.querySelector(".modal-image img");
     if ($image) $image.src = posterUrl;
     const $title = $modal2.querySelector(".modal-description h2");
@@ -537,7 +590,10 @@ const handleModal = {
     if ($detail)
       $detail.textContent = movieData.overview || "(줄거리 내용이 없습니다.)";
     this.loadUserRating(movieData.id);
-    this.open();
+    const modalMethods = $modal2.modalMethods;
+    if (modalMethods && modalMethods.open) {
+      modalMethods.open();
+    }
   },
   loadUserRating(movieId) {
     const ratingValue = movieRatingUtil.getRating(movieId);
@@ -582,7 +638,8 @@ const $Modal = () => {
     id: "closeModal"
   });
   const $closeImage = createElement("img", {
-    src: ICON_PATH.MODAL_CLOSE
+    src: ICON_PATH.MODAL_CLOSE,
+    alt: "modal_close"
   });
   $closeButton.appendChild($closeImage);
   const $modalContainer = createElement("div", {
@@ -592,7 +649,8 @@ const $Modal = () => {
     className: "modal-image"
   });
   const $image = createElement("img", {
-    src: ""
+    src: "",
+    alt: "movie_poster"
   });
   $modalImage.appendChild($image);
   const $modalDescription = createElement("div", {
@@ -617,7 +675,8 @@ const $Modal = () => {
   });
   const $star = createElement("img", {
     src: ICON_PATH.STAR_EMPTY,
-    className: "star"
+    className: "star",
+    alt: "평균 별점"
   });
   const $rateValue = createElement("span", {
     textContent: ""
@@ -639,43 +698,16 @@ const $Modal = () => {
   const $userRateStars = createElement("div", {
     className: "user-rate-stars"
   });
-  const $userRateStar1 = createElement("img", {
-    src: ICON_PATH.STAR_EMPTY,
-    className: "star",
-    id: "userRateStar1"
+  [1, 2, 3, 4, 5].forEach((starValue) => {
+    const $userRateStar = createElement("img", {
+      src: ICON_PATH.STAR_EMPTY,
+      className: "star",
+      id: `userRateStar${starValue}`,
+      alt: `${starValue}점`
+    });
+    $userRateStar.dataset.value = starValue.toString();
+    $userRateStars.append($userRateStar);
   });
-  $userRateStar1.dataset.value = "1";
-  const $userRateStar2 = createElement("img", {
-    src: ICON_PATH.STAR_EMPTY,
-    className: "star",
-    id: "userRateStar2"
-  });
-  $userRateStar2.dataset.value = "2";
-  const $userRateStar3 = createElement("img", {
-    src: ICON_PATH.STAR_EMPTY,
-    className: "star",
-    id: "userRateStar3"
-  });
-  $userRateStar3.dataset.value = "3";
-  const $userRateStar4 = createElement("img", {
-    src: ICON_PATH.STAR_EMPTY,
-    className: "star",
-    id: "userRateStar4"
-  });
-  $userRateStar4.dataset.value = "4";
-  const $userRateStar5 = createElement("img", {
-    src: ICON_PATH.STAR_EMPTY,
-    className: "star",
-    id: "userRateStar5"
-  });
-  $userRateStar5.dataset.value = "5";
-  $userRateStars.append(
-    $userRateStar1,
-    $userRateStar2,
-    $userRateStar3,
-    $userRateStar4,
-    $userRateStar5
-  );
   const $userRateTextContainer = createElement("div", {
     className: "user-rate-text-container"
   });
@@ -716,29 +748,44 @@ const $Modal = () => {
   $modalContainer.append($modalImage, $modalDescription);
   $modalElement.append($closeButton, $modalContainer);
   $modal2.appendChild($modalElement);
+  const modalMethods = {
+    open() {
+      $modal2.classList.add("active");
+      document.body.classList.add("modal-open");
+    },
+    close() {
+      $modal2.classList.remove("active");
+      document.body.classList.remove("modal-open");
+      document.removeEventListener("keydown", handleKeyDown);
+    }
+  };
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
-      handleModal.close();
+      modalMethods.close();
     }
   };
   document.addEventListener("keydown", handleKeyDown);
-  $closeButton.addEventListener("click", handleModal.close);
+  $closeButton.addEventListener("click", () => {
+    modalMethods.close();
+  });
   $modal2.addEventListener("click", (e) => {
     if (e.target === $modal2) {
-      handleModal.close();
+      modalMethods.close();
     }
   });
   const handleStarClick = (e) => {
     const target = e.target;
     if (target.classList.contains("star") && target.dataset.value) {
       const value = parseInt(target.dataset.value);
-      const currentMovieId = window.currentMovieId;
-      if (currentMovieId) {
-        handleModal.saveRating(currentMovieId, value);
+      const $modalElement2 = document.querySelector(".modal");
+      const movieId = ($modalElement2 == null ? void 0 : $modalElement2.dataset.movieId) ? parseInt($modalElement2.dataset.movieId) : null;
+      if (movieId) {
+        handleModal.saveRating(movieId, value);
       }
     }
   };
   $userRateStars.addEventListener("click", handleStarClick);
+  $modal2.modalMethods = modalMethods;
   return $modal2;
 };
 const transformMovieDetail = (tmdbDetail) => {
